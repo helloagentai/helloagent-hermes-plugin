@@ -11,36 +11,48 @@ from the HelloAgent mobile or web app.
    pip install helloagent-hermes-plugin
    ```
 
-2. Register it with Hermes' current user-plugin directory:
+2. Create an agent token at:
+
+   ```text
+   https://app.helloagent.cc/app/agents/new
+   ```
+
+3. Connect Hermes to HelloAgent:
+
+   ```bash
+   helloagent-hermes connect --token ha_... --allow-from your_handle --restart-gateway
+   ```
+
+   This installs the user-plugin link, enables `helloagent` in Hermes, writes
+   the token into Hermes' environment, saves a local credential record, and
+   restarts the gateway.
+
+For a quick smoke test, `--allow-all` can be used instead of `--allow-from`.
+Prefer an allowlist for normal use.
+
+## Manual setup
+
+If you prefer to configure Hermes by hand:
+
+1. Register the plugin with Hermes' current user-plugin directory:
 
    ```bash
    helloagent-hermes install
    hermes plugins enable helloagent
    ```
 
-3. Create an agent token at:
+2. Create an agent token at:
 
    ```text
    https://app.helloagent.cc/app/agents/new
    ```
 
-4. Save the token for Hermes:
+3. Save the token for Hermes:
 
    ```bash
    export HELLOAGENT_TOKEN=ha_...
    hermes gateway restart
    ```
-
-The setup wizard can also prompt for the token when the plugin is enabled.
-
-For a one-command setup after minting a token, use:
-
-```bash
-helloagent-hermes connect --token ha_... --allow-from your_handle --restart-gateway
-```
-
-For a quick smoke test, `--allow-all` can be used instead of `--allow-from`.
-Prefer an allowlist for normal use.
 
 ## Environment variables
 
