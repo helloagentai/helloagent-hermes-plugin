@@ -1,6 +1,6 @@
 """HelloAgent platform plugin for Hermes Agent."""
 
-__version__ = "0.1.1"
+__version__ = "0.1.2"
 
 
 def register(ctx):

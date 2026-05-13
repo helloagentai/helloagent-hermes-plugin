@@ -17,14 +17,6 @@ requires_env:
     url: "https://app.helloagent.cc/app/agents/new"
     password: true
 optional_env:
-  - name: HELLOAGENT_RELAY_URL
-    description: "WebSocket URL for the HelloAgent relay (default: wss://api.helloagent.cc/v1/ws)"
-    prompt: "Relay WebSocket URL"
-    password: false
-  - name: HELLOAGENT_API_URL
-    description: "REST API base (default: https://api.helloagent.cc)"
-    prompt: "REST API URL"
-    password: false
   - name: HELLOAGENT_DISPLAY_NAME
     description: "Display name surfaced to HelloAgent users (default: agent name from token)"
     prompt: "Display name (optional)"
@@ -36,10 +28,6 @@ optional_env:
   - name: HELLOAGENT_ALLOW_ALL_USERS
     description: "Allow any HelloAgent user to DM (dev only)"
     prompt: "Allow all users? (true/false)"
-    password: false
-  - name: HELLOAGENT_HOME_CHANNEL
-    description: "HelloAgent handle for cron / notification delivery"
-    prompt: "Home channel handle (or empty)"
     password: false
   - name: HELLOAGENT_DEBUG
     description: "1 for verbose SDK logging"

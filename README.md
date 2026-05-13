@@ -23,11 +23,10 @@ from the HelloAgent mobile or web app.
    helloagent-hermes connect
    ```
 
-   The command prompts for your `ha_*` token, an optional allowlist, optional
-   cron delivery handle, optional relay URL override, and whether to restart
-   the gateway. It installs the user-plugin link, enables `helloagent` in
-   Hermes, writes the token into Hermes' environment, and saves a local
-   credential record.
+   The command prompts for your `ha_*` token, an optional allowlist, and
+   whether to restart the gateway. It installs the user-plugin link, enables
+   `helloagent` in Hermes, writes the token into Hermes' environment, and
+   saves a local credential record.
 
 For non-interactive setup, pass the settings as flags:
 
@@ -64,11 +63,8 @@ If you prefer to configure Hermes by hand:
 | Variable | Purpose |
 |---|---|
 | `HELLOAGENT_TOKEN` | `ha_*` agent token. |
-| `HELLOAGENT_RELAY_URL` | Override relay websocket URL for local development. |
-| `HELLOAGENT_API_URL` | REST API base for future control-plane calls. |
 | `HELLOAGENT_ALLOWED_USERS` | Comma-separated handles allowed by the adapter prefilter. |
 | `HELLOAGENT_ALLOW_ALL_USERS` | Allow any HelloAgent sender. |
-| `HELLOAGENT_HOME_CHANNEL` | Default handle for `deliver=helloagent` cron jobs. |
 | `HELLOAGENT_DEBUG` | Enable verbose SDK logging when set to `1`. |
 
 ## Notes

@@ -42,12 +42,9 @@ def clean_helloagent_env(monkeypatch, tmp_path):
     monkeypatch.setenv("HERMES_HOME", str(tmp_path / "hermes-home"))
     for key in (
         "HELLOAGENT_TOKEN",
-        "HELLOAGENT_RELAY_URL",
-        "HELLOAGENT_API_URL",
         "HELLOAGENT_DISPLAY_NAME",
         "HELLOAGENT_ALLOWED_USERS",
         "HELLOAGENT_ALLOW_ALL_USERS",
-        "HELLOAGENT_HOME_CHANNEL",
         "HELLOAGENT_DEBUG",
     ):
         monkeypatch.delenv(key, raising=False)
@@ -176,16 +173,12 @@ def test_env_enablement_none_without_token():
     assert _env_enablement() is None
 
 
-def test_env_enablement_seeds_extra_and_home(monkeypatch):
+def test_env_enablement_returns_empty_seed_with_token(monkeypatch):
     monkeypatch.setenv("HELLOAGENT_TOKEN", "ha_env")
-    monkeypatch.setenv("HELLOAGENT_RELAY_URL", "ws://relay.test/v1/ws")
-    monkeypatch.setenv("HELLOAGENT_HOME_CHANNEL", "alice")
 
     seed = _env_enablement()
 
-    assert seed["relay_url"] == "ws://relay.test/v1/ws"
-    assert seed["api_url"] == _hello_mod.DEFAULT_API_URL
-    assert seed["home_channel"] == {"chat_id": "alice", "name": "alice"}
+    assert seed == {}
 
 
 def test_env_enablement_includes_display_name_and_allowed_users(monkeypatch):
@@ -209,9 +202,9 @@ def test_check_requirements_false_when_sdk_missing(monkeypatch):
     assert check_requirements() is False
 
 
-def test_interactive_setup_saves_token_allowlist_and_home(monkeypatch, tmp_path):
+def test_interactive_setup_saves_token_and_allowlist(monkeypatch, tmp_path):
     saved = {}
-    prompts = iter(["ha_setup", "alice, bob", "alice"])
+    prompts = iter(["ha_setup", "alice, bob"])
 
     setup_module = types.ModuleType("hermes_cli.setup")
     setup_module.get_env_value = lambda key: ""
@@ -230,7 +223,6 @@ def test_interactive_setup_saves_token_allowlist_and_home(monkeypatch, tmp_path)
     assert saved == {
         "HELLOAGENT_TOKEN": "ha_setup",
         "HELLOAGENT_ALLOWED_USERS": "alice,bob",
-        "HELLOAGENT_HOME_CHANNEL": "alice",
     }
     data = json.loads(
         (tmp_path / "credentials" / "helloagent.json").read_text(encoding="utf-8")
@@ -276,12 +268,11 @@ class TestHelloAgentAdapter:
     def test_init_reads_env_and_allowlist(self, monkeypatch, platform_config):
         monkeypatch.setenv("HELLOAGENT_TOKEN", "ha_env")
         monkeypatch.setenv("HELLOAGENT_ALLOWED_USERS", "Alice, bob")
-        monkeypatch.setenv("HELLOAGENT_RELAY_URL", "ws://relay.test/v1/ws")
 
         adapter = HelloAgentAdapter(platform_config)
 
         assert adapter._token == "ha_env"
-        assert adapter._relay_url == "ws://relay.test/v1/ws"
+        assert adapter._relay_url == _hello_mod.DEFAULT_RELAY_URL
         assert adapter._allowed_users == {"alice", "bob"}
 
     def test_name(self, platform_config):
@@ -294,8 +285,6 @@ class TestHelloAgentAdapter:
             enabled=True,
             token="ha_config",
             extra={
-                "relay_url": "ws://relay.extra/v1/ws",
-                "api_url": "https://api.extra",
                 "display_name": "Extra Jarvis",
                 "allowed_users": ["Alice", "Bob"],
             },
@@ -303,8 +292,7 @@ class TestHelloAgentAdapter:
 
         adapter = HelloAgentAdapter(cfg)
 
-        assert adapter._relay_url == "ws://relay.extra/v1/ws"
-        assert adapter._api_url == "https://api.extra"
+        assert adapter._relay_url == _hello_mod.DEFAULT_RELAY_URL
         assert adapter._display_name == "Extra Jarvis"
         assert adapter._allowed_users == {"alice", "bob"}
 
@@ -696,7 +684,6 @@ def test_register_wires_platform_hooks():
     assert entry["label"] == "HelloAgent"
     assert entry["check_fn"] is check_requirements
     assert entry["validate_config"] is validate_config
-    assert entry["cron_deliver_env_var"] == "HELLOAGENT_HOME_CHANNEL"
     assert entry["standalone_sender_fn"] is _standalone_send
     assert entry["allowed_users_env"] == "HELLOAGENT_ALLOWED_USERS"
     assert entry["allow_all_env"] == "HELLOAGENT_ALLOW_ALL_USERS"

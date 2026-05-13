@@ -89,8 +89,6 @@ def test_connect_writes_credentials_env_and_runs_hermes_enable(monkeypatch, tmp_
         token="ha_test",
         handle="@alice/jarvis",
         allow_from="alice, bob",
-        home_channel="alice",
-        relay_url="ws://relay.test/v1/ws",
     )
 
     assert result["plugin_path"] == tmp_path / "plugins" / "helloagent"
@@ -99,8 +97,6 @@ def test_connect_writes_credentials_env_and_runs_hermes_enable(monkeypatch, tmp_
     env_text = (tmp_path / ".env").read_text(encoding="utf-8")
     assert "HELLOAGENT_TOKEN=ha_test" in env_text
     assert "HELLOAGENT_ALLOWED_USERS=alice,bob" in env_text
-    assert "HELLOAGENT_HOME_CHANNEL=alice" in env_text
-    assert "HELLOAGENT_RELAY_URL=ws://relay.test/v1/ws" in env_text
 
     creds_path = tmp_path / "credentials" / "helloagent.json"
     creds = json.loads(creds_path.read_text(encoding="utf-8"))
@@ -254,7 +250,7 @@ def test_main_connect_uses_getpass_and_prints_restart_hint(monkeypatch, tmp_path
 
 def test_main_connect_interactively_prompts_optional_settings(monkeypatch, tmp_path, capsys):
     calls = []
-    answers = iter(["alice, bob", "alice", "ws://relay.test/v1/ws", "y"])
+    answers = iter(["alice, bob", "y"])
     monkeypatch.setenv("HERMES_HOME", str(tmp_path))
     monkeypatch.setattr(install_module, "_is_interactive", lambda: True)
     monkeypatch.setattr(install_module.getpass, "getpass", lambda prompt: "ha_prompted")
@@ -272,8 +268,6 @@ def test_main_connect_interactively_prompts_optional_settings(monkeypatch, tmp_p
     env_text = (tmp_path / ".env").read_text(encoding="utf-8")
     assert "HELLOAGENT_TOKEN=ha_prompted" in env_text
     assert "HELLOAGENT_ALLOWED_USERS=alice,bob" in env_text
-    assert "HELLOAGENT_HOME_CHANNEL=alice" in env_text
-    assert "HELLOAGENT_RELAY_URL=ws://relay.test/v1/ws" in env_text
 
 
 def test_main_connect_noninteractive_does_not_prompt_optional_settings(

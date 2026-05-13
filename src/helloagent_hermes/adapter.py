@@ -24,7 +24,6 @@ from hermes_constants import get_hermes_home
 logger = logging.getLogger(__name__)
 
 DEFAULT_RELAY_URL = "wss://api.helloagent.cc/v1/ws"
-DEFAULT_API_URL = "https://api.helloagent.cc"
 
 
 def _env_bool(name: str, default: bool = False) -> bool:
@@ -113,14 +112,7 @@ class HelloAgentAdapter(BasePlatformAdapter):
         extra = getattr(config, "extra", {}) or {}
 
         self._token = _resolve_token(config)
-        self._relay_url = (
-            os.getenv("HELLOAGENT_RELAY_URL")
-            or extra.get("relay_url", DEFAULT_RELAY_URL)
-        )
-        self._api_url = (
-            os.getenv("HELLOAGENT_API_URL")
-            or extra.get("api_url", DEFAULT_API_URL)
-        )
+        self._relay_url = DEFAULT_RELAY_URL
         self._display_name = (
             os.getenv("HELLOAGENT_DISPLAY_NAME")
             or extra.get("display_name", "")
@@ -131,7 +123,6 @@ class HelloAgentAdapter(BasePlatformAdapter):
             extra.get("allowed_users", []),
         )
         self._allow_all = _env_bool("HELLOAGENT_ALLOW_ALL_USERS", False)
-        self._home_channel = os.getenv("HELLOAGENT_HOME_CHANNEL") or ""
 
         self._sdk_agent = None
         self._sdk_run_task: Optional[asyncio.Task] = None
@@ -348,13 +339,6 @@ def interactive_setup() -> None:
     if allowed:
         save_env_value("HELLOAGENT_ALLOWED_USERS", allowed.replace(" ", ""))
 
-    home = prompt(
-        "Home handle for cron delivery (optional)",
-        default=get_env_value("HELLOAGENT_HOME_CHANNEL") or "",
-    ).strip()
-    if home:
-        save_env_value("HELLOAGENT_HOME_CHANNEL", home)
-
     print_success("HelloAgent configuration saved to ~/.hermes/.env")
     print_info("Restart the gateway for changes to take effect: hermes gateway restart")
 
@@ -367,10 +351,7 @@ def _env_enablement() -> dict | None:
     if not token:
         return None
 
-    seed: dict[str, Any] = {
-        "relay_url": os.getenv("HELLOAGENT_RELAY_URL", DEFAULT_RELAY_URL),
-        "api_url": os.getenv("HELLOAGENT_API_URL", DEFAULT_API_URL),
-    }
+    seed: dict[str, Any] = {}
     display_name = os.getenv("HELLOAGENT_DISPLAY_NAME", "").strip()
     if display_name:
         seed["display_name"] = display_name
@@ -379,12 +360,6 @@ def _env_enablement() -> dict | None:
         seed["allowed_users"] = [
             item.strip() for item in allowed.split(",") if item.strip()
         ]
-    home = os.getenv("HELLOAGENT_HOME_CHANNEL", "").strip()
-    if home:
-        seed["home_channel"] = {
-            "chat_id": home,
-            "name": home,
-        }
     return seed
 
 
@@ -409,12 +384,7 @@ async def _standalone_send(
     except ImportError:
         return {"error": "helloagentai SDK not installed"}
 
-    extra = getattr(pconfig, "extra", {}) or {}
-    relay_url = os.getenv("HELLOAGENT_RELAY_URL") or extra.get(
-        "relay_url", DEFAULT_RELAY_URL
-    )
-
-    agent = Agent(token=token, relay_url=relay_url)
+    agent = Agent(token=token, relay_url=DEFAULT_RELAY_URL)
     run_task = asyncio.create_task(agent.run())
     try:
         for _ in range(200):
@@ -459,7 +429,6 @@ def register(ctx) -> None:
         install_hint="pip install helloagent-hermes-plugin",
         setup_fn=interactive_setup,
         env_enablement_fn=_env_enablement,
-        cron_deliver_env_var="HELLOAGENT_HOME_CHANNEL",
         standalone_sender_fn=_standalone_send,
         allowed_users_env="HELLOAGENT_ALLOWED_USERS",
         allow_all_env="HELLOAGENT_ALLOW_ALL_USERS",

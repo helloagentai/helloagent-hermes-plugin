@@ -146,8 +146,6 @@ def connect(
     handle: str = "",
     allow_from: str = "",
     allow_all: bool = False,
-    home_channel: str = "",
-    relay_url: str = "",
     force_install: bool = True,
     copy: bool = False,
     enable: bool = True,
@@ -166,10 +164,6 @@ def connect(
         _upsert_env_value(env_path, "HELLOAGENT_ALLOWED_USERS", allow_from.replace(" ", ""))
     if allow_all:
         _upsert_env_value(env_path, "HELLOAGENT_ALLOW_ALL_USERS", "true")
-    if home_channel:
-        _upsert_env_value(env_path, "HELLOAGENT_HOME_CHANNEL", home_channel.strip())
-    if relay_url:
-        _upsert_env_value(env_path, "HELLOAGENT_RELAY_URL", relay_url.strip())
 
     if enable:
         _run_hermes(["plugins", "enable", "helloagent"])
@@ -217,12 +211,6 @@ def main(argv: list[str] | None = None) -> None:
         action="store_true",
         help="Allow any HelloAgent user. Useful for smoke tests; prefer --allow-from.",
     )
-    connect_parser.add_argument(
-        "--home-channel",
-        default="",
-        help="Default HelloAgent handle for cron / notification delivery.",
-    )
-    connect_parser.add_argument("--relay-url", default="", help="Override relay websocket URL.")
     connect_parser.add_argument("--copy", action="store_true", help="Copy files instead of symlink.")
     connect_parser.add_argument(
         "--no-enable",
@@ -248,8 +236,6 @@ def main(argv: list[str] | None = None) -> None:
     interactive = _is_interactive()
     token = args.token or getpass.getpass("HelloAgent ha_* token: ")
     allow_from = args.allow_from
-    home_channel = args.home_channel
-    relay_url = args.relay_url
     restart_gateway = args.restart_gateway
 
     if interactive:
@@ -257,10 +243,6 @@ def main(argv: list[str] | None = None) -> None:
             allow_from = _prompt_text(
                 "Allowed HelloAgent handles (comma-separated, optional)"
             )
-        if not home_channel:
-            home_channel = _prompt_text("Home handle for cron delivery (optional)")
-        if not relay_url:
-            relay_url = _prompt_text("Relay websocket URL (blank for default)")
         if not restart_gateway:
             restart_gateway = _prompt_yes_no("Restart Hermes gateway now", default=True)
 
@@ -269,8 +251,6 @@ def main(argv: list[str] | None = None) -> None:
         handle=args.handle,
         allow_from=allow_from,
         allow_all=args.allow_all,
-        home_channel=home_channel,
-        relay_url=relay_url,
         copy=args.copy,
         enable=not args.no_enable,
         restart_gateway=restart_gateway,
