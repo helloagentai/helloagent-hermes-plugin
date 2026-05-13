@@ -27,9 +27,6 @@ from the HelloAgent mobile or web app.
    the token into Hermes' environment, saves a local credential record, and
    restarts the gateway.
 
-For a quick smoke test, `--allow-all` can be used instead of `--allow-from`.
-Prefer an allowlist for normal use.
-
 ## Manual setup
 
 If you prefer to configure Hermes by hand:
