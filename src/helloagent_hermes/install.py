@@ -100,6 +100,24 @@ def _run_hermes(args: list[str]) -> None:
     subprocess.run([hermes_bin, *args], check=True)
 
 
+def _is_interactive() -> bool:
+    return sys.stdin.isatty() and sys.stdout.isatty()
+
+
+def _prompt_text(label: str, *, default: str = "") -> str:
+    suffix = f" [{default}]" if default else ""
+    value = input(f"{label}{suffix}: ").strip()
+    return value or default
+
+
+def _prompt_yes_no(label: str, *, default: bool = False) -> bool:
+    suffix = " [Y/n]" if default else " [y/N]"
+    value = input(f"{label}{suffix}: ").strip().lower()
+    if not value:
+        return default
+    return value in {"y", "yes", "1", "true"}
+
+
 def install(*, force: bool = False, copy: bool = False) -> Path:
     source = Path(__file__).resolve().parent
     target = _hermes_home() / "plugins" / "helloagent"
@@ -227,22 +245,40 @@ def main(argv: list[str] | None = None) -> None:
         print("Next: hermes plugins enable helloagent")
         return
 
+    interactive = _is_interactive()
     token = args.token or getpass.getpass("HelloAgent ha_* token: ")
+    allow_from = args.allow_from
+    home_channel = args.home_channel
+    relay_url = args.relay_url
+    restart_gateway = args.restart_gateway
+
+    if interactive:
+        if not args.allow_all and not allow_from:
+            allow_from = _prompt_text(
+                "Allowed HelloAgent handles (comma-separated, optional)"
+            )
+        if not home_channel:
+            home_channel = _prompt_text("Home handle for cron delivery (optional)")
+        if not relay_url:
+            relay_url = _prompt_text("Relay websocket URL (blank for default)")
+        if not restart_gateway:
+            restart_gateway = _prompt_yes_no("Restart Hermes gateway now", default=True)
+
     paths = connect(
         token=token,
         handle=args.handle,
-        allow_from=args.allow_from,
+        allow_from=allow_from,
         allow_all=args.allow_all,
-        home_channel=args.home_channel,
-        relay_url=args.relay_url,
+        home_channel=home_channel,
+        relay_url=relay_url,
         copy=args.copy,
         enable=not args.no_enable,
-        restart_gateway=args.restart_gateway,
+        restart_gateway=restart_gateway,
     )
     print(f"Installed HelloAgent Hermes plugin at {paths['plugin_path']}")
     print(f"Saved HelloAgent credentials at {paths['credentials_path']}")
     print(f"Updated Hermes env at {paths['env_path']}")
-    if not args.restart_gateway:
+    if not restart_gateway:
         print("Next: hermes gateway restart")
 
 

@@ -198,6 +198,23 @@ def test_run_hermes_requires_binary(monkeypatch):
         install_module._run_hermes(["plugins", "list"])
 
 
+def test_prompt_yes_no_accepts_defaults_and_yes(monkeypatch):
+    answers = iter(["", "yes", "n"])
+    monkeypatch.setattr("builtins.input", lambda _prompt: next(answers))
+
+    assert install_module._prompt_yes_no("Restart", default=True) is True
+    assert install_module._prompt_yes_no("Restart") is True
+    assert install_module._prompt_yes_no("Restart", default=True) is False
+
+
+def test_prompt_text_returns_default_when_blank(monkeypatch):
+    answers = iter(["", "alice"])
+    monkeypatch.setattr("builtins.input", lambda _prompt: next(answers))
+
+    assert install_module._prompt_text("Home", default="bob") == "bob"
+    assert install_module._prompt_text("Home") == "alice"
+
+
 def test_main_install_command_prints_next_step(monkeypatch, tmp_path, capsys):
     monkeypatch.setenv("HERMES_HOME", str(tmp_path))
 
@@ -233,6 +250,47 @@ def test_main_connect_uses_getpass_and_prints_restart_hint(monkeypatch, tmp_path
     assert calls == []
     creds = json.loads((tmp_path / "credentials" / "helloagent.json").read_text(encoding="utf-8"))
     assert creds["token"] == "ha_prompted"
+
+
+def test_main_connect_interactively_prompts_optional_settings(monkeypatch, tmp_path, capsys):
+    calls = []
+    answers = iter(["alice, bob", "alice", "ws://relay.test/v1/ws", "y"])
+    monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+    monkeypatch.setattr(install_module, "_is_interactive", lambda: True)
+    monkeypatch.setattr(install_module.getpass, "getpass", lambda prompt: "ha_prompted")
+    monkeypatch.setattr("builtins.input", lambda prompt: next(answers))
+    monkeypatch.setattr("helloagent_hermes.install._run_hermes", lambda args: calls.append(args))
+
+    install_module.main(["connect"])
+
+    out = capsys.readouterr().out
+    assert "Next: hermes gateway restart" not in out
+    assert calls == [
+        ["plugins", "enable", "helloagent"],
+        ["gateway", "restart"],
+    ]
+    env_text = (tmp_path / ".env").read_text(encoding="utf-8")
+    assert "HELLOAGENT_TOKEN=ha_prompted" in env_text
+    assert "HELLOAGENT_ALLOWED_USERS=alice,bob" in env_text
+    assert "HELLOAGENT_HOME_CHANNEL=alice" in env_text
+    assert "HELLOAGENT_RELAY_URL=ws://relay.test/v1/ws" in env_text
+
+
+def test_main_connect_noninteractive_does_not_prompt_optional_settings(
+    monkeypatch, tmp_path, capsys
+):
+    monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+    monkeypatch.setattr(install_module, "_is_interactive", lambda: False)
+    monkeypatch.setattr("builtins.input", lambda prompt: pytest.fail("should not prompt"))
+    monkeypatch.setattr("helloagent_hermes.install._run_hermes", lambda args: None)
+
+    install_module.main(["connect", "--token", "ha_test"])
+
+    out = capsys.readouterr().out
+    assert "Next: hermes gateway restart" in out
+    env_text = (tmp_path / ".env").read_text(encoding="utf-8")
+    assert "HELLOAGENT_TOKEN=ha_test" in env_text
+    assert "HELLOAGENT_ALLOWED_USERS" not in env_text
 
 
 def test_main_connect_restart_suppresses_restart_hint(monkeypatch, tmp_path, capsys):

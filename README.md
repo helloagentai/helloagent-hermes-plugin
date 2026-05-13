@@ -20,12 +20,20 @@ from the HelloAgent mobile or web app.
 3. Connect Hermes to HelloAgent:
 
    ```bash
-   helloagent-hermes connect --token ha_... --allow-from your_handle --restart-gateway
+   helloagent-hermes connect
    ```
 
-   This installs the user-plugin link, enables `helloagent` in Hermes, writes
-   the token into Hermes' environment, saves a local credential record, and
-   restarts the gateway.
+   The command prompts for your `ha_*` token, an optional allowlist, optional
+   cron delivery handle, optional relay URL override, and whether to restart
+   the gateway. It installs the user-plugin link, enables `helloagent` in
+   Hermes, writes the token into Hermes' environment, and saves a local
+   credential record.
+
+For non-interactive setup, pass the settings as flags:
+
+```bash
+helloagent-hermes connect --token ha_... --allow-from your_handle --restart-gateway
+```
 
 ## Manual setup
 
